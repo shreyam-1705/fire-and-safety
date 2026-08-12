@@ -1,0 +1,20 @@
+{
+  "event_id": "evt-20260810-00132",
+  "timestamp": "2026-08-10T15:11:06Z",
+  "location_id": "LOC-GURUGRAM-HQ",
+  "panel_id": "FACP-01",
+  "zone_id": "ZONE-3C-SERVER-ROOM",
+  "device_id": "MS-304",
+  "device_type": "multi_sensor",
+  "current_state": "NORMAL",
+  "is_test_mode": false,
+  "fault_code": null,
+  "telemetry": {
+    "smoke_obscuration_pct": 0.02,
+    "temperature_celsius": 21.8,
+    "co_ppm": 2,
+    "co_cell_health_pct": 98.5,
+    "loop_voltage_dc": 24.2,
+    "self_verify_passed": true
+  }
+}

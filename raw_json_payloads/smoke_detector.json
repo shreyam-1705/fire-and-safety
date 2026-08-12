@@ -1,0 +1,18 @@
+{
+  "event_id": "evt-20260810-00129",
+  "timestamp": "2026-08-10T15:11:04Z",
+  "location_id": "LOC-GURUGRAM-HQ",
+  "panel_id": "FACP-01",
+  "zone_id": "ZONE-2B-OPEN-OFFICE",
+  "device_id": "SMK-202",
+  "device_type": "optical_smoke",
+  "current_state": "NORMAL",
+  "is_test_mode": false,
+  "fault_code": null,
+  "telemetry": {
+    "smoke_obscuration_pct": 0.08,
+    "chamber_dirt_pct": 14.5,
+    "loop_voltage_dc": 24.1,
+    "self_verify_passed": true
+  }
+}

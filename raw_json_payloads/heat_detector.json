@@ -1,0 +1,18 @@
+{
+  "event_id": "evt-20260810-00131",
+  "timestamp": "2026-08-10T15:11:05Z",
+  "location_id": "LOC-GURUGRAM-HQ",
+  "panel_id": "FACP-01",
+  "zone_id": "ZONE-1A-KITCHEN",
+  "device_id": "HT-101",
+  "device_type": "ror_heat",
+  "current_state": "NORMAL",
+  "is_test_mode": false,
+  "fault_code": null,
+  "telemetry": {
+    "temperature_celsius": 23.4,
+    "rate_of_rise_c_per_min": 0.1,
+    "loop_voltage_dc": 24.0,
+    "self_verify_passed": true
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "event_id": "evt-20260812-00136",
+  "timestamp": "2026-08-12T13:02:30Z",
+  "location_id": "LOC-GURUGRAM-HQ",
+  "panel_id": "FACP-01",
+  "zone_id": "ZONE-2B-OPEN-OFFICE",
+  "device_id": "NAC-701",
+  "device_type": "horn_strobe",
+  "current_state": "NORMAL",
+  "is_test_mode": false,
+  "fault_code": null,
+  "telemetry": {
+    "is_sounding": false,
+    "strobe_active": false,
+    "self_test_decibel_level": 0.0,
+    "loop_voltage_dc": 24.0,
+    "self_verify_passed": true
+  }
+}
