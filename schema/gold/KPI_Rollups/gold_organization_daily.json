@@ -1,0 +1,17 @@
+{
+  "table": "gold_organization_daily",
+  "layer": "gold",
+  "grain": "one row per organization per day",
+  "partitionBy": ["date"],
+  "columns": [
+    { "name": "date", "type": "string", "key": "PK" },
+    { "name": "organization_id", "type": "string", "key": "PK" },
+    { "name": "total_sites_monitored", "type": "int64" },
+    { "name": "total_monitored_devices", "type": "int64" },
+    { "name": "global_active_alarms", "type": "int64" },
+    { "name": "global_active_faults", "type": "int64" },
+    { "name": "global_fleet_health_score", "type": "double" },
+    { "name": "global_online_controllers", "type": "int64" },
+    { "name": "global_offline_controllers", "type": "int64" }
+  ]
+}

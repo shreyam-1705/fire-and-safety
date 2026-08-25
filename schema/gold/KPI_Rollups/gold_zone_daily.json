@@ -1,0 +1,23 @@
+{
+  "table": "gold_zone_daily",
+  "layer": "gold",
+  "grain": "one row per zone per day",
+  "partitionBy": ["date"],
+  "columns": [
+    { "name": "date", "type": "string", "key": "PK" },
+    { "name": "organization_id", "type": "string" },
+    { "name": "site_id", "type": "string" },
+    { "name": "system_id", "type": "string", "key": "PK" },
+    { "name": "floor_level", "type": "string" },
+    { "name": "device_density", "type": "int64" },
+    { "name": "active_alarms", "type": "int64" },
+    { "name": "active_faults", "type": "int64" },
+    { "name": "active_disablements", "type": "int64" },
+    { "name": "zone_status", "type": "string" },
+    { "name": "smoke_detector_count", "type": "int64" },
+    { "name": "horn_strobe_count", "type": "int64" },
+    { "name": "mcp_count", "type": "int64" },
+    { "name": "multi_sensor_count", "type": "int64" },
+    { "name": "ror_heat_count", "type": "int64" }
+  ]
+}

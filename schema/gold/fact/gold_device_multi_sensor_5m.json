@@ -1,0 +1,22 @@
+{
+  "table": "gold_device_multi_sensor_5m",
+  "layer": "gold",
+  "grain": "5-minute window per device",
+  "partitionBy": ["date"],
+  "columns": [
+    { "name": "date", "type": "string", "key": "PK" },
+    { "name": "window_start", "type": "timestamp", "key": "PK" },
+    { "name": "organization_id", "type": "string" },
+    { "name": "site_id", "type": "string" },
+    { "name": "system_id", "type": "string" },
+    { "name": "device_id", "type": "string", "key": "PK" },
+    { "name": "avg_co_ppm", "type": "double" },
+    { "name": "avg_co_cell_health_pct", "type": "double" },
+    { "name": "avg_smoke_obscuration_pct", "type": "double" },
+    { "name": "avg_temperature_celsius", "type": "double" },
+    { "name": "avg_loop_voltage_dc", "type": "double" },
+    { "name": "self_verify_passed", "type": "boolean" },
+    { "name": "is_toxic_co_alarm", "type": "boolean" },
+    { "name": "is_cell_fault", "type": "boolean" }
+  ]
+}

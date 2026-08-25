@@ -1,0 +1,20 @@
+{
+  "table": "gold_device_horn_strobe_5m",
+  "layer": "gold",
+  "grain": "5-minute window per device",
+  "partitionBy": ["date"],
+  "columns": [
+    { "name": "date", "type": "string", "key": "PK" },
+    { "name": "window_start", "type": "timestamp", "key": "PK" },
+    { "name": "organization_id", "type": "string" },
+    { "name": "site_id", "type": "string" },
+    { "name": "system_id", "type": "string" },
+    { "name": "device_id", "type": "string", "key": "PK" },
+    { "name": "strobe_active", "type": "boolean" },
+    { "name": "is_sounding", "type": "boolean" },
+    { "name": "avg_decibel_level", "type": "double" },
+    { "name": "avg_sync_offset_ms", "type": "double" },
+    { "name": "avg_loop_voltage_dc", "type": "double" },
+    { "name": "self_verify_passed", "type": "boolean" }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "table": "gold_device_manual_call_point_5m",
+  "layer": "gold",
+  "grain": "5-minute window per device",
+  "partitionBy": ["date"],
+  "columns": [
+    { "name": "date", "type": "string", "key": "PK" },
+    { "name": "window_start", "type": "timestamp", "key": "PK" },
+    { "name": "organization_id", "type": "string" },
+    { "name": "site_id", "type": "string" },
+    { "name": "system_id", "type": "string" },
+    { "name": "device_id", "type": "string", "key": "PK" },
+    { "name": "is_activated", "type": "boolean" },
+    { "name": "tamper_switch", "type": "boolean" },
+    { "name": "avg_loop_voltage_dc", "type": "double" }
+  ]
+}
