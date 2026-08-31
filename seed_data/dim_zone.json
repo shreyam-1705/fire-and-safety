@@ -1,0 +1,562 @@
+[
+    {
+        "zone_id": "ZONE-0001",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-02",
+        "zone_name": "FL-02 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0002",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-02",
+        "zone_name": "FL-02 Corridor"
+    },
+    {
+        "zone_id": "ZONE-0003",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Stairwell Exit"
+    },
+    {
+        "zone_id": "ZONE-0004",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0005",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Corridor"
+    },
+    {
+        "zone_id": "ZONE-0006",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-03",
+        "zone_name": "FL-03 Server Room"
+    },
+    {
+        "zone_id": "ZONE-0007",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0008",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-01",
+        "zone_name": "FL-01 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0009",
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0010",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-11",
+        "zone_name": "FL-11 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0011",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0012",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-11",
+        "zone_name": "FL-11 Stairwell Exit"
+    },
+    {
+        "zone_id": "ZONE-0013",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-10",
+        "zone_name": "FL-10 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0014",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0015",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0016",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Corridor"
+    },
+    {
+        "zone_id": "ZONE-0017",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0018",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-13",
+        "zone_name": "FL-13 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0019",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0020",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-13",
+        "zone_name": "FL-13 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0021",
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "floor_level": "FL-03",
+        "zone_name": "FL-03 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0022",
+        "panel_id": "PANEL-003",
+        "site_id": "SITE-001",
+        "floor_level": "FL-09",
+        "zone_name": "FL-09 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0023",
+        "panel_id": "PANEL-003",
+        "site_id": "SITE-001",
+        "floor_level": "FL-11",
+        "zone_name": "FL-11 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0024",
+        "panel_id": "PANEL-003",
+        "site_id": "SITE-001",
+        "floor_level": "FL-01",
+        "zone_name": "FL-01 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0025",
+        "panel_id": "PANEL-003",
+        "site_id": "SITE-001",
+        "floor_level": "FL-06",
+        "zone_name": "FL-06 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0026",
+        "panel_id": "PANEL-003",
+        "site_id": "SITE-001",
+        "floor_level": "FL-01",
+        "zone_name": "FL-01 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0027",
+        "panel_id": "PANEL-004",
+        "site_id": "SITE-002",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Cafeteria Kitchen"
+    },
+    {
+        "zone_id": "ZONE-0028",
+        "panel_id": "PANEL-004",
+        "site_id": "SITE-002",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0029",
+        "panel_id": "PANEL-004",
+        "site_id": "SITE-002",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0030",
+        "panel_id": "PANEL-004",
+        "site_id": "SITE-002",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0031",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-01",
+        "zone_name": "FL-01 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0032",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0033",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Server Room"
+    },
+    {
+        "zone_id": "ZONE-0034",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-10",
+        "zone_name": "FL-10 Cafeteria Kitchen"
+    },
+    {
+        "zone_id": "ZONE-0035",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-09",
+        "zone_name": "FL-09 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0036",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0037",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-02",
+        "zone_name": "FL-02 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0038",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-02",
+        "zone_name": "FL-02 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0039",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0040",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0041",
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "floor_level": "FL-08",
+        "zone_name": "FL-08 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0042",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-03",
+        "zone_name": "FL-03 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0043",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Cafeteria Kitchen"
+    },
+    {
+        "zone_id": "ZONE-0044",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0045",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0046",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0047",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0048",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0049",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-14",
+        "zone_name": "FL-14 Cafeteria Kitchen"
+    },
+    {
+        "zone_id": "ZONE-0050",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-10",
+        "zone_name": "FL-10 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0051",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-01",
+        "zone_name": "FL-01 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0052",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-13",
+        "zone_name": "FL-13 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0053",
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0054",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-05",
+        "zone_name": "FL-05 Server Room"
+    },
+    {
+        "zone_id": "ZONE-0055",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-06",
+        "zone_name": "FL-06 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0056",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-03",
+        "zone_name": "FL-03 Stairwell Exit"
+    },
+    {
+        "zone_id": "ZONE-0057",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0058",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-13",
+        "zone_name": "FL-13 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0059",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0060",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-11",
+        "zone_name": "FL-11 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0061",
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "floor_level": "FL-02",
+        "zone_name": "FL-02 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0062",
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "floor_level": "FL-05",
+        "zone_name": "FL-05 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0063",
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "floor_level": "FL-08",
+        "zone_name": "FL-08 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0064",
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "floor_level": "FL-05",
+        "zone_name": "FL-05 Corridor"
+    },
+    {
+        "zone_id": "ZONE-0065",
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "floor_level": "FL-13",
+        "zone_name": "FL-13 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0066",
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "floor_level": "FL-01",
+        "zone_name": "FL-01 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0067",
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "floor_level": "FL-13",
+        "zone_name": "FL-13 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0068",
+        "panel_id": "PANEL-009",
+        "site_id": "SITE-004",
+        "floor_level": "FL-15",
+        "zone_name": "FL-15 Server Room"
+    },
+    {
+        "zone_id": "ZONE-0069",
+        "panel_id": "PANEL-009",
+        "site_id": "SITE-004",
+        "floor_level": "FL-06",
+        "zone_name": "FL-06 Underground Parking"
+    },
+    {
+        "zone_id": "ZONE-0070",
+        "panel_id": "PANEL-009",
+        "site_id": "SITE-004",
+        "floor_level": "FL-08",
+        "zone_name": "FL-08 Server Room"
+    },
+    {
+        "zone_id": "ZONE-0071",
+        "panel_id": "PANEL-009",
+        "site_id": "SITE-004",
+        "floor_level": "FL-03",
+        "zone_name": "FL-03 Electrical Room"
+    },
+    {
+        "zone_id": "ZONE-0072",
+        "panel_id": "PANEL-009",
+        "site_id": "SITE-004",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Cafeteria Kitchen"
+    },
+    {
+        "zone_id": "ZONE-0073",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Warehouse"
+    },
+    {
+        "zone_id": "ZONE-0074",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-12",
+        "zone_name": "FL-12 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0075",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Lobby"
+    },
+    {
+        "zone_id": "ZONE-0076",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-02",
+        "zone_name": "FL-02 Server Room"
+    },
+    {
+        "zone_id": "ZONE-0077",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-09",
+        "zone_name": "FL-09 Loading Dock"
+    },
+    {
+        "zone_id": "ZONE-0078",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-04",
+        "zone_name": "FL-04 Stairwell Exit"
+    },
+    {
+        "zone_id": "ZONE-0079",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-07",
+        "zone_name": "FL-07 Executive Suites"
+    },
+    {
+        "zone_id": "ZONE-0080",
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "floor_level": "FL-08",
+        "zone_name": "FL-08 Underground Parking"
+    }
+]

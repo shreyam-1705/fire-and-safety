@@ -1,0 +1,42 @@
+[
+    {
+        "site_id": "SITE-001",
+        "organization_id": "ORG-01",
+        "site_name": "Chicago Regional Hub",
+        "address": "4440 Wacker Dr",
+        "city": "Chicago",
+        "latitude": 41.878401,
+        "longitude": -87.651877,
+        "timezone": "America/Chicago"
+    },
+    {
+        "site_id": "SITE-002",
+        "organization_id": "ORG-01",
+        "site_name": "Dubai Regional Hub",
+        "address": "5172 Financial Center Rd",
+        "city": "Dubai",
+        "latitude": 25.169852,
+        "longitude": 55.302953,
+        "timezone": "Asia/Dubai"
+    },
+    {
+        "site_id": "SITE-003",
+        "organization_id": "ORG-01",
+        "site_name": "Singapore Regional Hub",
+        "address": "7211 Marina Blvd",
+        "city": "Singapore",
+        "latitude": 1.400159,
+        "longitude": 103.816428,
+        "timezone": "Asia/Singapore"
+    },
+    {
+        "site_id": "SITE-004",
+        "organization_id": "ORG-01",
+        "site_name": "Singapore Regional Hub",
+        "address": "6886 Marina Blvd",
+        "city": "Singapore",
+        "latitude": 1.373032,
+        "longitude": 103.81017,
+        "timezone": "Asia/Singapore"
+    }
+]

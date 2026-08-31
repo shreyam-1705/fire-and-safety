@@ -1,0 +1,72 @@
+[
+    {
+        "panel_id": "PANEL-001",
+        "site_id": "SITE-001",
+        "panel_model": "Autronica AutroSafe 4",
+        "firmware_version": "v3.9.8",
+        "ip_address": "10.0.1.51"
+    },
+    {
+        "panel_id": "PANEL-002",
+        "site_id": "SITE-001",
+        "panel_model": "Autronica AutroSafe 4",
+        "firmware_version": "v4.1.2",
+        "ip_address": "10.0.1.52"
+    },
+    {
+        "panel_id": "PANEL-003",
+        "site_id": "SITE-001",
+        "panel_model": "Autronica AutroSafe 4",
+        "firmware_version": "v3.9.8",
+        "ip_address": "10.0.1.53"
+    },
+    {
+        "panel_id": "PANEL-004",
+        "site_id": "SITE-002",
+        "panel_model": "Kidde VM Series",
+        "firmware_version": "v5.0.1",
+        "ip_address": "10.0.2.51"
+    },
+    {
+        "panel_id": "PANEL-005",
+        "site_id": "SITE-002",
+        "panel_model": "Autronica AutroSafe 4",
+        "firmware_version": "v5.0.1",
+        "ip_address": "10.0.2.52"
+    },
+    {
+        "panel_id": "PANEL-006",
+        "site_id": "SITE-003",
+        "panel_model": "Edwards EST4",
+        "firmware_version": "v5.0.1",
+        "ip_address": "10.0.3.51"
+    },
+    {
+        "panel_id": "PANEL-007",
+        "site_id": "SITE-003",
+        "panel_model": "Kidde VM Series",
+        "firmware_version": "v5.0.1",
+        "ip_address": "10.0.3.52"
+    },
+    {
+        "panel_id": "PANEL-008",
+        "site_id": "SITE-003",
+        "panel_model": "Edwards EST4",
+        "firmware_version": "v3.9.8",
+        "ip_address": "10.0.3.53"
+    },
+    {
+        "panel_id": "PANEL-009",
+        "site_id": "SITE-004",
+        "panel_model": "Kidde VM Series",
+        "firmware_version": "v5.0.1",
+        "ip_address": "10.0.4.51"
+    },
+    {
+        "panel_id": "PANEL-010",
+        "site_id": "SITE-004",
+        "panel_model": "Autronica AutroSafe 4",
+        "firmware_version": "v4.2.0",
+        "ip_address": "10.0.4.52"
+    }
+]
