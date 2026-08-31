@@ -1,0 +1,102 @@
+{
+  "title": "Multi-Sensor (CO) Payload",
+  "description": "Schema for multi-sensor detectors with CO detection (MS-*).",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "message_type",
+    "event_id",
+    "timestamp",
+    "device_id",
+    "current_state",
+    "fault_code",
+    "standard_metrics",
+    "sensor_metrics"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "HEARTBEAT",
+        "STATE_CHANGE",
+        "FAULT_DETECTED",
+        "ALARM_TRIGGERED"
+      ]
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "device_id": {
+      "type": "string"
+    },
+    "current_state": {
+      "type": "string",
+      "enum": [
+        "NORMAL",
+        "ALARM",
+        "TROUBLE",
+        "DISABLED",
+        "OFFLINE"
+      ]
+    },
+    "fault_code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "standard_metrics": {
+      "type": "object",
+      "required": [
+        "is_test_mode",
+        "loop_voltage_dc",
+        "self_verify_passed"
+      ],
+      "properties": {
+        "is_test_mode": {
+          "type": "boolean"
+        },
+        "loop_voltage_dc": {
+          "type": "number"
+        },
+        "self_verify_passed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "sensor_metrics": {
+      "type": "object",
+      "required": [
+        "smoke_obscuration_pct",
+        "temperature_celsius",
+        "co_ppm",
+        "co_cell_health_pct"
+      ],
+      "properties": {
+        "smoke_obscuration_pct": {
+          "type": "number"
+        },
+        "temperature_celsius": {
+          "type": "number"
+        },
+        "co_ppm": {
+          "type": "number"
+        },
+        "co_cell_health_pct": {
+          "type": "number"
+        }
+      }
+    }
+  }
+}
