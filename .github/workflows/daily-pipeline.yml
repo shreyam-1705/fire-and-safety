@@ -1,0 +1,60 @@
+name: Daily Fire & Safety Pipeline
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start Date (e.g., 2026-08-10). Leave blank for default (Yesterday).'
+        required: false
+        type: string
+      end_date:
+        description: 'End Date (e.g., 2026-08-11). Leave blank to generate 1 day from start date.'
+        required: false
+        type: string
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java & Python
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create Java Keystores from Secrets
+        run: |
+          echo "${{ secrets.KAFKA_CA_PEM }}" > ca.pem
+          echo "${{ secrets.KAFKA_SERVICE_CERT }}" > service.cert
+          echo "${{ secrets.KAFKA_SERVICE_KEY }}" > service.key
+          openssl pkcs12 -export -in service.cert -inkey service.key -out keystore.p12 -name kafka -password pass:changeit
+          keytool -import -file ca.pem -alias CARoot -keystore truststore.jks -storepass changeit -noprompt
+
+      - name: Start Kafka Data Generator
+        env:
+          AIVEN_URI: ${{ vars.KAFKA_URI }}
+          START_DATE: ${{ github.event.inputs.start_date }}
+          END_DATE: ${{ github.event.inputs.end_date }}
+        run: |
+          python data_generators/kafka_producer.py & 
+
+      - name: Run PySpark Medallion Pipeline
+        env:
+          KAFKA_URI: ${{ vars.KAFKA_URI }}
+          HF_NAMESPACE: ${{ vars.HF_NAMESPACE }}
+          HF_BUCKET_NAME: ${{ vars.HF_BUCKET_NAME }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          RUN_DURATION_SECONDS: '1800'
+        run: python src/pipeline.py

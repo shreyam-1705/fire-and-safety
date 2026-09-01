@@ -1,0 +1,5 @@
+pyspark==3.5.0
+delta-spark==3.1.0
+huggingface_hub
+kafka-python
+python-dotenv
