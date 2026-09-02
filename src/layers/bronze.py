@@ -4,9 +4,8 @@ from pyspark.sql.functions import from_json, col, current_timestamp, to_timestam
 from pyspark.sql.types import StructType, StructField, StringType
 
 def run_bronze(spark):
-    print("[Bronze] Starting Kafka -> Bronze Stream...", flush=True)
+    print("[Bronze] Starting Kafka -> Bronze (availableNow) consumption...", flush=True)
     
-    # 100% String schema for maximum resilience against edge payload failures
     envelope_schema = StructType([
         StructField("event_id", StringType()),
         StructField("timestamp", StringType()),
@@ -28,7 +27,6 @@ def run_bronze(spark):
         .option("kafka.bootstrap.servers", os.getenv("KAFKA_URI")) \
         .option("subscribe", "fire-and-safety") \
         .option("startingOffsets", "earliest") \
-        .option("maxOffsetsPerTrigger", 10000) \
         .option("failOnDataLoss", "false") \
         .option("kafka.security.protocol", "SSL") \
         .option("kafka.ssl.truststore.location", SparkFiles.get("truststore.jks")) \
@@ -51,7 +49,9 @@ def run_bronze(spark):
 
     query = final_bronze_df.writeStream.format("delta").outputMode("append") \
         .option("checkpointLocation", "/tmp/checkpoints/bronze") \
-        .option("mergeSchema", "true").trigger(processingTime="15 seconds") \
+        .option("mergeSchema", "true") \
+        .trigger(availableNow=True) \
         .start("/tmp/bronze_table")
         
     query.awaitTermination()
+    print("[Bronze] Complete. Backlog fully consumed.", flush=True)
