@@ -1,2 +1,3 @@
 fire-safety-venv/
 .env
+raw_json_payloads/simulated_fire_safety_stream.json

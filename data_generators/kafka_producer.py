@@ -57,8 +57,9 @@ def get_time_window():
 
     if not start_time:
         today_midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        start_time = today_midnight - timedelta(days=1)
-        end_time = today_midnight
+        # Default to tomorrow for future simulation architecture
+        start_time = today_midnight + timedelta(days=1)
+        end_time = start_time + timedelta(days=1)
 
     if not end_time:
         end_time = start_time + timedelta(days=1)
@@ -199,17 +200,14 @@ def generate_full_day_backlog(devices):
             
             current_state = "NORMAL"
             fault_code = None
-            event_type = "SYSTEM_RESTORED" 
             fire_intensity = 0.0
             
             if dev_id in active_faults_by_device:
                 fault_code = active_faults_by_device[dev_id]["code"]
-                event_type = fault_code
                 current_state = "TROUBLE" 
                 
             elif random.random() < CONFIG["DEVICE_FAULT_PROB"]:
                 fault_code = random.choice(FAULT_CODES.get(dtype, ["DEVICE_ERROR"]))
-                event_type = fault_code
                 current_state = "TROUBLE"
                 duration = random.randint(12, 48)
                 active_faults_by_device[dev_id] = {"code": fault_code, "total_ticks": duration, "ticks_remaining": duration}
@@ -226,13 +224,9 @@ def generate_full_day_backlog(devices):
                 
                 if fire_intensity >= alarm_threshold:
                     current_state = "ALARM"  
-                    if dtype == "optical_smoke": event_type = "SMOKE_DETECTED"
-                    elif dtype == "ror_heat": event_type = "HEAT_DETECTED"
-                    else: event_type = "FIRE_ALARM"
             
             elif zone_id in active_maintenance_by_zone:
                 current_state = "ISOLATED"
-                event_type = "DISABLEMENT"
             
             battery_runtime = round(random.uniform(23.8, 24.0), 1)
             if fault_code == "POWER_FAILURE":
@@ -249,7 +243,6 @@ def generate_full_day_backlog(devices):
                 "zone_id": zone_id,
                 "device_id": dev_id,
                 "device_type": dtype,
-                "event_type": event_type, 
                 "current_state": current_state,
                 "is_test_mode": (current_state == "ISOLATED"),
                 "fault_code": fault_code,

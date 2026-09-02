@@ -1,6 +1,9 @@
 import os
-from pyspark.sql.functions import col, window, avg, expr, to_date
+from pyspark.sql.functions import col, window, avg, expr, to_date, sum as _sum, when, lit
 
+# ==========================================
+# 1. TIER 1: DEVICE FACTS
+# ==========================================
 def run_gold_optical_smoke(spark):
     df = spark.readStream.format("delta").load("/tmp/silver_device_optical_smoke")
     agg_df = df.withWatermark("timestamp", "5 minutes") \
@@ -83,8 +86,74 @@ def run_gold_manual_call_point(spark):
 
     return agg_df.writeStream.format("delta").outputMode("append").option("checkpointLocation", "/tmp/checkpoints/gold_mcp").option("mergeSchema", "true").trigger(availableNow=True).start("/tmp/gold_device_manual_call_point_5m")
 
+# ==========================================
+# 2. TIER 2: SPATIAL KPI SNAPSHOTS
+# ==========================================
+def run_gold_snapshots(spark):
+    """Unifies Silver records and aggregates 5-minute KPIs for Zone, Site, and Organization."""
+    base_cols = ["timestamp", "organization_id", "site_id", "panel_id", "zone_id", "device_id", "device_type", "current_state"]
+    
+    # Read and unify all 5 Silver tables
+    df_smoke = spark.readStream.format("delta").load("/tmp/silver_device_optical_smoke").select(*base_cols)
+    df_heat = spark.readStream.format("delta").load("/tmp/silver_device_ror_heat").select(*base_cols)
+    df_ms = spark.readStream.format("delta").load("/tmp/silver_device_multi_sensor").select(*base_cols)
+    df_horn = spark.readStream.format("delta").load("/tmp/silver_device_horn_strobe").select(*base_cols)
+    df_mcp = spark.readStream.format("delta").load("/tmp/silver_device_manual_call_point").select(*base_cols)
+    
+    unified_df = df_smoke.union(df_heat).union(df_ms).union(df_horn).union(df_mcp).withWatermark("timestamp", "5 minutes")
+
+    # Zone Snapshot
+    zone_agg = unified_df.groupBy("organization_id", "site_id", "panel_id", "zone_id", window("timestamp", "5 minutes")).agg(
+        expr("count(distinct device_id)").alias("device_density"),
+        _sum(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("active_alarms"),
+        _sum(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("active_faults"),
+        _sum(when(col("current_state") == "ISOLATED", 1).otherwise(0)).alias("active_disablements"),
+        _sum(when(col("device_type") == "optical_smoke", 1).otherwise(0)).alias("smoke_detector_count"),
+        _sum(when(col("device_type") == "horn_strobe", 1).otherwise(0)).alias("horn_strobe_count"),
+        _sum(when(col("device_type") == "manual_call_point", 1).otherwise(0)).alias("mcp_count"),
+        _sum(when(col("device_type") == "multi_sensor", 1).otherwise(0)).alias("multi_sensor_count"),
+        _sum(when(col("device_type") == "ror_heat", 1).otherwise(0)).alias("ror_heat_count")
+    ).withColumn("zone_status", when(col("active_alarms") > 0, lit("ALARM")).when(col("active_faults") > 0, lit("TROUBLE")).otherwise(lit("NORMAL"))) \
+     .withColumn("date", to_date(col("window.start").cast("string"))) \
+     .select("date", "organization_id", "site_id", "panel_id", col("zone_id").alias("system_id"), "device_density", "active_alarms", "active_faults", "active_disablements", "zone_status", "smoke_detector_count", "horn_strobe_count", "mcp_count", "multi_sensor_count", "ror_heat_count")
+
+    q_zone = zone_agg.writeStream.format("delta").outputMode("append").option("checkpointLocation", "/tmp/checkpoints/gold_zone_snapshot").trigger(availableNow=True).start("/tmp/gold_zone_snapshot_5m")
+
+    # Site Snapshot
+    site_agg = unified_df.groupBy("organization_id", "site_id", window("timestamp", "5 minutes")).agg(
+        expr("count(distinct device_id)").alias("monitored_devices"),
+        _sum(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("active_alarms"),
+        _sum(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("active_faults"),
+        _sum(when(col("current_state") == "ISOLATED", 1).otherwise(0)).alias("active_disablements"),
+        _sum(when(col("device_type") == "optical_smoke", 1).otherwise(0)).alias("smoke_detector_count"),
+        _sum(when(col("device_type") == "horn_strobe", 1).otherwise(0)).alias("horn_strobe_count"),
+        _sum(when(col("device_type") == "manual_call_point", 1).otherwise(0)).alias("mcp_count"),
+        _sum(when(col("device_type") == "multi_sensor", 1).otherwise(0)).alias("multi_sensor_count"),
+        _sum(when(col("device_type") == "ror_heat", 1).otherwise(0)).alias("ror_heat_count")
+    ).withColumn("fleet_health_score", lit(100.0) - (col("active_faults") * 2)) \
+     .withColumn("daily_total_alarms", col("active_alarms")) \
+     .withColumn("daily_total_faults", col("active_faults")) \
+     .withColumn("date", to_date(col("window.start").cast("string"))) \
+     .select("date", "organization_id", "site_id", "active_alarms", "active_faults", "monitored_devices", "fleet_health_score", "active_disablements", "smoke_detector_count", "horn_strobe_count", "mcp_count", "multi_sensor_count", "ror_heat_count", "daily_total_alarms", "daily_total_faults")
+    
+    q_site = site_agg.writeStream.format("delta").outputMode("append").option("checkpointLocation", "/tmp/checkpoints/gold_site_snapshot").trigger(availableNow=True).start("/tmp/gold_site_snapshot_5m")
+
+    # Organization Snapshot
+    org_agg = unified_df.groupBy("organization_id", window("timestamp", "5 minutes")).agg(
+        expr("count(distinct site_id)").alias("total_sites_monitored"),
+        expr("count(distinct device_id)").alias("total_monitored_devices"),
+        _sum(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("global_active_alarms"),
+        _sum(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("global_active_faults")
+    ).withColumn("global_fleet_health_score", lit(100.0) - (col("global_active_faults") * 2)) \
+     .withColumn("date", to_date(col("window.start").cast("string"))) \
+     .select("date", "organization_id", "total_sites_monitored", "total_monitored_devices", "global_active_alarms", "global_active_faults", "global_fleet_health_score")
+
+    q_org = org_agg.writeStream.format("delta").outputMode("append").option("checkpointLocation", "/tmp/checkpoints/gold_org_snapshot").trigger(availableNow=True).start("/tmp/gold_organization_snapshot_5m")
+
+    return [q_zone, q_site, q_org]
+
 def run_gold(spark):
-    print("[Gold] Starting Silver -> Gold (availableNow) 5m Fact Aggregations...", flush=True)
+    print("[Gold] Starting Silver -> Gold (availableNow) Fact & Snapshot Aggregations...", flush=True)
     queries = [
         run_gold_optical_smoke(spark),
         run_gold_ror_heat(spark),
@@ -92,6 +161,11 @@ def run_gold(spark):
         run_gold_horn_strobe(spark),
         run_gold_manual_call_point(spark)
     ]
+    
+    # Add snapshot queries
+    queries.extend(run_gold_snapshots(spark))
+    
     for q in queries:
         q.awaitTermination()
-    print("[Gold] Complete. Aggregated all valid Silver records.", flush=True)
+        
+    print("[Gold] Complete. Aggregated all valid Silver records into Facts and Snapshots.", flush=True)
