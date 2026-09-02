@@ -4,15 +4,6 @@ on:
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
-    inputs:
-      start_date:
-        description: 'Start Date (e.g., 2026-08-10). Leave blank for default.'
-        required: false
-        type: string
-      end_date:
-        description: 'End Date (e.g., 2026-08-11). Leave blank for 1 day from start.'
-        required: false
-        type: string
 
 jobs:
   run-pipeline:
@@ -46,14 +37,7 @@ jobs:
           openssl pkcs12 -export -in service.cert -inkey service.key -out keystore.p12 -name kafka -password pass:changeit
           keytool -import -file ca.pem -alias CARoot -keystore truststore.jks -storepass changeit -noprompt
 
-      - name: 1. Generate Full Day Backlog
-        env:
-          AIVEN_URI: ${{ vars.KAFKA_URI }}
-          START_DATE: ${{ github.event.inputs.start_date }}
-          END_DATE: ${{ github.event.inputs.end_date }}
-        run: python data_generators/kafka_producer.py
-
-      - name: 2. Run PySpark Medallion Pipeline (availableNow)
+      - name: Run PySpark Medallion Pipeline (availableNow)
         env:
           KAFKA_URI: ${{ vars.KAFKA_URI }}
           HF_NAMESPACE: ${{ vars.HF_NAMESPACE }}
