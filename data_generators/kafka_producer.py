@@ -277,13 +277,12 @@ def main():
     context.load_cert_chain(certfile="service.cert", keyfile="service.key")
 
     try:
+        # Reverted to proven configuration from test-pipeline
         producer = KafkaProducer(
             bootstrap_servers=AIVEN_URI,
             security_protocol="SSL",
             ssl_context=context,
-            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-            batch_size=32768,
-            linger_ms=20
+            value_serializer=lambda v: json.dumps(v).encode("utf-8")
         )
     except Exception as e:
         print(f"❌ Failed to connect to Kafka: {e}")
