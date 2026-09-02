@@ -35,10 +35,14 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Create Java Keystores from Secrets
+        env:
+          KAFKA_CA_PEM: ${{ secrets.KAFKA_CA_PEM }}
+          KAFKA_SERVICE_CERT: ${{ secrets.KAFKA_SERVICE_CERT }}
+          KAFKA_SERVICE_KEY: ${{ secrets.KAFKA_SERVICE_KEY }}
         run: |
-          echo "${{ secrets.KAFKA_CA_PEM }}" > ca.pem
-          echo "${{ secrets.KAFKA_SERVICE_CERT }}" > service.cert
-          echo "${{ secrets.KAFKA_SERVICE_KEY }}" > service.key
+          echo "$KAFKA_CA_PEM" > ca.pem
+          echo "$KAFKA_SERVICE_CERT" > service.cert
+          echo "$KAFKA_SERVICE_KEY" > service.key
           openssl pkcs12 -export -in service.cert -inkey service.key -out keystore.p12 -name kafka -password pass:changeit
           keytool -import -file ca.pem -alias CARoot -keystore truststore.jks -storepass changeit -noprompt
 
@@ -47,7 +51,6 @@ jobs:
           AIVEN_URI: ${{ vars.KAFKA_URI }}
           START_DATE: ${{ github.event.inputs.start_date }}
           END_DATE: ${{ github.event.inputs.end_date }}
-        # Notice we removed the '&' so this fully completes before Spark starts
         run: python data_generators/kafka_producer.py
 
       - name: 2. Run PySpark Medallion Pipeline (availableNow)
