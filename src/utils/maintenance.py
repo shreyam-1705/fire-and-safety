@@ -1,20 +1,26 @@
-TABLES_TO_MAINTAIN = [
-    "bronze_table", 
-    "silver_device_optical_smoke", "silver_device_ror_heat", 
-    "silver_device_multi_sensor", "silver_device_horn_strobe", "silver_device_manual_call_point",
-    "silver_quarantine", 
-    "gold_device_optical_smoke_5m", "gold_device_ror_heat_5m",
-    "gold_device_multi_sensor_5m", "gold_device_horn_strobe_5m", "gold_device_manual_call_point_5m",
-    "gold_zone_snapshot_5m", "gold_site_snapshot_5m", "gold_organization_snapshot_5m"
-]
+import glob
+from delta.tables import DeltaTable
 
-def optimize_and_vacuum(spark):
-    """Optimizes Delta tables for faster querying and vacuums unreferenced files."""
-    print("[Maintenance] Running Delta optimization and vacuuming...", flush=True)
-    for table in TABLES_TO_MAINTAIN:
+def run_maintenance(spark):
+    print("[Maintenance] Starting Delta table optimization and vacuum...", flush=True)
+    
+    # Locate all Delta table directories in /tmp
+    tables = glob.glob("/tmp/bronze_*") + glob.glob("/tmp/silver_*") + glob.glob("/tmp/gold_*")
+    
+    for path in tables:
         try:
-            spark.sql(f"OPTIMIZE delta.`/tmp/{table}`")
-            spark.sql(f"VACUUM delta.`/tmp/{table}` RETAIN 168 HOURS")
-        except Exception:
+            dt = DeltaTable.forPath(spark, path)
+            
+            # 1. OPTIMIZE: Compacts small streaming micro-batch files into larger files
+            dt.optimize().executeCompaction()
+            print(f"[Maintenance] Optimized (compacted) {path}", flush=True)
+            
+            # 2. VACUUM: Removes historical files no longer needed (0 hours retention for lean POC storage)
+            dt.vacuum(0) 
+            print(f"[Maintenance] Vacuumed {path}", flush=True)
+            
+        except Exception as e:
+            # Ignore if table is empty, doesn't exist yet, or hasn't been fully initialized
             pass
-    print("[Maintenance] Delta files optimized and vacuumed.", flush=True)
+            
+    print("[Maintenance] Maintenance complete.", flush=True)
