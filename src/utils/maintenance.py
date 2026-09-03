@@ -4,14 +4,6 @@ import threading
 from pyspark.sql.functions import col, to_date, countDistinct, sum as spark_sum, avg as spark_avg, when, lit, window, round
 from delta.tables import DeltaTable
 
-TABLES_TO_MAINTAIN = [
-    "bronze_table",
-    "silver_optical_smoke", "silver_ror_heat", "silver_multi_sensor",
-    "silver_horn_strobe", "silver_manual_call_point", "silver_unified", "silver_quarantine",
-    "gold_zone_kpi_5m", "gold_optical_smoke_5m", "gold_ror_heat_5m", "gold_multi_sensor_5m",
-    "gold_zone_daily_5m", "gold_site_daily_5m", "gold_organization_daily_5m"
-]
-
 def run_daily_rollups_5m(spark):
     try:
         df = spark.read.format("delta").load("/tmp/silver_unified")
@@ -62,14 +54,11 @@ def run_daily_rollups_5m(spark):
                 countDistinct(when(col("device_type") == "ror_heat", col("device_id"))).alias("ror_heat_count"),
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("daily_total_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("daily_total_faults"),
-                
-                # Use cast("long") for integer operations merging into LONG delta columns
                 spark_sum(when(col("self_verify_passed") == True, 1).otherwise(0)).cast("long").alias("daily_self_tests"),
                 lit(99.9).alias("system_online_pct"),
                 lit(10).cast("long").alias("total_online_controllers"),
                 lit(0).cast("long").alias("total_degraded_controllers"),
                 lit(0).cast("long").alias("total_offline_controllers"),
-                
                 round((spark_sum(when((col("device_type") == "optical_smoke") & (col("self_verify_passed") == True), 1).otherwise(0)) / 
                        spark_sum(when(col("device_type") == "optical_smoke", 1).otherwise(0.0001))) * 100, 2).alias("nfpa72_drift_pass_rate"),
                 round((spark_sum(when((col("device_type") == "horn_strobe") & (col("self_verify_passed") == True), 1).otherwise(0)) / 
@@ -94,7 +83,6 @@ def run_daily_rollups_5m(spark):
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("global_active_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("global_active_faults"),
                 round(((countDistinct("device_id") - countDistinct(when(col("current_state") == "TROUBLE", col("device_id")))) / countDistinct("device_id")) * 100, 2).alias("global_fleet_health_score"),
-                
                 lit(25).cast("long").alias("global_online_controllers"),
                 lit(0).cast("long").alias("global_offline_controllers")
             )
@@ -109,21 +97,11 @@ def run_daily_rollups_5m(spark):
     except Exception as e:
         print(f"[Maintenance] 5-minute rolling daily rollup failed: {e}", flush=True)
 
-def optimize_and_vacuum(spark):
-    for table in TABLES_TO_MAINTAIN:
-        try:
-            spark.sql(f"OPTIMIZE delta.`/tmp/{table}`")
-            spark.sql(f"VACUUM delta.`/tmp/{table}` RETAIN 0 HOURS")
-        except Exception:
-            pass
-    print("[Maintenance] Delta tables compacted and vacuumed.", flush=True)
-
 def _maintenance_loop(spark):
     while True:
         time.sleep(300)
-        print("\n[Maintenance] Running scheduled rollups and compaction...", flush=True)
+        print("\n[Maintenance] Running scheduled rollups...", flush=True)
         run_daily_rollups_5m(spark)
-        optimize_and_vacuum(spark)
 
 def start_maintenance_thread(spark):
     threading.Thread(target=_maintenance_loop, args=(spark,), daemon=True).start()
