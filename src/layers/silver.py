@@ -6,7 +6,7 @@ def process_silver_batch(batch_df, batch_id):
     if batch_df.isEmpty():
         return
 
-    # 1. Null Key Detection (Duplicates are now handled upstream by Structured Streaming)
+    # 1. Null Key Detection
     null_keys_df = batch_df.filter(col("event_id").isNull() | col("timestamp").isNull()) \
         .withColumn("failed_rules", lit("NULL_KEY_FIELDS"))
 
@@ -21,11 +21,14 @@ def process_silver_batch(batch_df, batch_id):
     smoke_df = parsed_df.filter(col("device_type") == "optical_smoke") \
         .withColumn("smoke_obscuration_pct", get_json_object(col("telemetry_payload"), "$.smoke_obscuration_pct").cast("double")) \
         .withColumn("chamber_dirt_pct", get_json_object(col("telemetry_payload"), "$.chamber_dirt_pct").cast("double"))
-    smoke_valid = smoke_df.filter(
+    
+    smoke_cond = (
         ((col("smoke_obscuration_pct") >= 0.0) | col("smoke_obscuration_pct").isNull()) &
         ((col("chamber_dirt_pct") >= 0.0) | col("chamber_dirt_pct").isNull())
     )
-    smoke_invalid = smoke_df.subtract(smoke_valid).withColumn("failed_rules", lit("INVALID_SMOKE_PHYSICS"))
+    smoke_valid = smoke_df.filter(smoke_cond)
+    smoke_invalid = smoke_df.filter(~smoke_cond).withColumn("failed_rules", lit("INVALID_SMOKE_PHYSICS"))
+    
     if not smoke_valid.isEmpty():
         smoke_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_optical_smoke")
 
@@ -33,11 +36,14 @@ def process_silver_batch(batch_df, batch_id):
     heat_df = parsed_df.filter(col("device_type") == "ror_heat") \
         .withColumn("temperature_celsius", get_json_object(col("telemetry_payload"), "$.temperature_celsius").cast("double")) \
         .withColumn("rate_of_rise_c_per_min", get_json_object(col("telemetry_payload"), "$.rate_of_rise_c_per_min").cast("double"))
-    heat_valid = heat_df.filter(
+    
+    heat_cond = (
         (col("temperature_celsius").between(-40.0, 150.0) | col("temperature_celsius").isNull()) &
         ((col("rate_of_rise_c_per_min") >= 0.0) | col("rate_of_rise_c_per_min").isNull())
     )
-    heat_invalid = heat_df.subtract(heat_valid).withColumn("failed_rules", lit("INVALID_HEAT_PHYSICS"))
+    heat_valid = heat_df.filter(heat_cond)
+    heat_invalid = heat_df.filter(~heat_cond).withColumn("failed_rules", lit("INVALID_HEAT_PHYSICS"))
+    
     if not heat_valid.isEmpty():
         heat_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_ror_heat")
 
@@ -47,13 +53,16 @@ def process_silver_batch(batch_df, batch_id):
         .withColumn("temperature_celsius", get_json_object(col("telemetry_payload"), "$.temperature_celsius").cast("double")) \
         .withColumn("co_ppm", get_json_object(col("telemetry_payload"), "$.co_ppm").cast("integer")) \
         .withColumn("co_cell_health_pct", get_json_object(col("telemetry_payload"), "$.co_cell_health_pct").cast("double"))
-    multi_valid = multi_df.filter(
+    
+    multi_cond = (
         ((col("smoke_obscuration_pct") >= 0.0) | col("smoke_obscuration_pct").isNull()) &
         (col("temperature_celsius").between(-40.0, 150.0) | col("temperature_celsius").isNull()) &
         ((col("co_ppm") >= 0) | col("co_ppm").isNull()) &
         ((col("co_cell_health_pct") >= 0.0) | col("co_cell_health_pct").isNull())
     )
-    multi_invalid = multi_df.subtract(multi_valid).withColumn("failed_rules", lit("INVALID_MULTI_PHYSICS"))
+    multi_valid = multi_df.filter(multi_cond)
+    multi_invalid = multi_df.filter(~multi_cond).withColumn("failed_rules", lit("INVALID_MULTI_PHYSICS"))
+    
     if not multi_valid.isEmpty():
         multi_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_multi_sensor")
 
@@ -63,11 +72,14 @@ def process_silver_batch(batch_df, batch_id):
         .withColumn("strobe_active", get_json_object(col("telemetry_payload"), "$.strobe_active").cast("boolean")) \
         .withColumn("self_test_decibel_level", get_json_object(col("telemetry_payload"), "$.self_test_decibel_level").cast("double")) \
         .withColumn("sync_offset_ms", get_json_object(col("telemetry_payload"), "$.sync_offset_ms").cast("double"))
-    horn_valid = horn_df.filter(
+    
+    horn_cond = (
         (col("self_test_decibel_level").between(0.0, 150.0) | col("self_test_decibel_level").isNull()) &
         ((col("sync_offset_ms") >= 0.0) | col("sync_offset_ms").isNull())
     )
-    horn_invalid = horn_df.subtract(horn_valid).withColumn("failed_rules", lit("INVALID_HORN_PHYSICS"))
+    horn_valid = horn_df.filter(horn_cond)
+    horn_invalid = horn_df.filter(~horn_cond).withColumn("failed_rules", lit("INVALID_HORN_PHYSICS"))
+    
     if not horn_valid.isEmpty():
         horn_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_horn_strobe")
 
@@ -116,7 +128,6 @@ def run_silver(spark):
     print("[Silver] Starting Bronze -> Silver Validation Stream...", flush=True)
     bronze_df = spark.readStream.format("delta").load("/tmp/bronze_table")
 
-    # Industry standard streaming deduplication utilizing Watermarks
     dedup_df = bronze_df \
         .withWatermark("timestamp", "15 minutes") \
         .dropDuplicates(["event_id"])
