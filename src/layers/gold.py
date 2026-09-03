@@ -11,9 +11,10 @@ def run_gold_zone_kpi(spark):
             col("site_id"),
             col("zone_id")
         ).agg(
-            spark_sum(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("active_alarms"),
-            spark_sum(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("active_troubles"),
-            spark_sum(when(col("current_state") == "ISOLATED", 1).otherwise(0)).alias("isolated_devices")
+            # Using max() to flag if ANY heartbeat in this 5m window was an alarm/trouble
+            spark_max(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("active_alarms"),
+            spark_max(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("active_troubles"),
+            spark_max(when(col("current_state") == "ISOLATED", 1).otherwise(0)).alias("isolated_devices")
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
@@ -34,12 +35,15 @@ def run_gold_smoke(spark):
         .groupBy(window(col("timestamp"), "5 minutes"), col("device_id"), col("zone_id")) \
         .agg(
             avg("smoke_obscuration_pct").alias("avg_smoke_obscuration"),
-            spark_max("chamber_dirt_pct").alias("max_chamber_dirt")
+            spark_max("chamber_dirt_pct").alias("max_chamber_dirt"),
+            spark_max(when(col("current_state") == "ALARM", True).otherwise(False)).alias("is_smoke_alarm"),
+            spark_max(when(col("fault_code") == "SENSOR_FAULT", True).otherwise(False)).alias("is_dirt_warning")
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
             "device_id", "zone_id",
-            "avg_smoke_obscuration", "max_chamber_dirt"
+            "avg_smoke_obscuration", "max_chamber_dirt",
+            "is_smoke_alarm", "is_dirt_warning"
         )
 
     smoke_5m.writeStream.format("delta").outputMode("append") \
@@ -55,12 +59,15 @@ def run_gold_heat(spark):
         .groupBy(window(col("timestamp"), "5 minutes"), col("device_id"), col("zone_id")) \
         .agg(
             avg("temperature_celsius").alias("avg_temperature"),
-            spark_max("rate_of_rise_c_per_min").alias("max_rate_of_rise")
+            spark_max("rate_of_rise_c_per_min").alias("max_rate_of_rise"),
+            spark_max(when(col("current_state") == "ALARM", True).otherwise(False)).alias("is_ror_alarm"),
+            spark_max(when(col("current_state") == "ALARM", True).otherwise(False)).alias("is_fixed_temp_alarm")
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
             "device_id", "zone_id",
-            "avg_temperature", "max_rate_of_rise"
+            "avg_temperature", "max_rate_of_rise",
+            "is_ror_alarm", "is_fixed_temp_alarm"
         )
 
     heat_5m.writeStream.format("delta").outputMode("append") \
@@ -77,12 +84,15 @@ def run_gold_multi(spark):
         .agg(
             avg("smoke_obscuration_pct").alias("avg_smoke_obscuration"),
             avg("temperature_celsius").alias("avg_temperature"),
-            spark_max("co_ppm").alias("max_co_ppm")
+            spark_max("co_ppm").alias("max_co_ppm"),
+            spark_max(when(col("current_state") == "ALARM", True).otherwise(False)).alias("is_toxic_co_alarm"),
+            spark_max(when(col("fault_code") == "BATTERY_LOW", True).otherwise(False)).alias("is_cell_fault")
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
             "device_id", "zone_id",
-            "avg_smoke_obscuration", "avg_temperature", "max_co_ppm"
+            "avg_smoke_obscuration", "avg_temperature", "max_co_ppm",
+            "is_toxic_co_alarm", "is_cell_fault"
         )
 
     multi_5m.writeStream.format("delta").outputMode("append") \

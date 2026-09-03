@@ -1,23 +1,16 @@
 # FILE: src/layers/silver.py
 import os
-from pyspark.sql.window import Window
-from pyspark.sql.functions import col, get_json_object, lit, row_number, current_timestamp
+from pyspark.sql.functions import col, get_json_object, lit, current_timestamp
 
 def process_silver_batch(batch_df, batch_id):
     if batch_df.isEmpty():
         return
 
-    # 1. Deduplication and Null Key Detection
-    window_spec = Window.partitionBy("event_id").orderBy("ingestion_timestamp")
-    tagged_df = batch_df.withColumn("row_num", row_number().over(window_spec))
-
-    null_keys_df = tagged_df.filter(col("event_id").isNull() | col("timestamp").isNull()) \
+    # 1. Null Key Detection (Duplicates are now handled upstream by Structured Streaming)
+    null_keys_df = batch_df.filter(col("event_id").isNull() | col("timestamp").isNull()) \
         .withColumn("failed_rules", lit("NULL_KEY_FIELDS"))
 
-    duplicates_df = tagged_df.filter(col("event_id").isNotNull() & col("timestamp").isNotNull() & (col("row_num") > 1)) \
-        .withColumn("failed_rules", lit("DUPLICATE_EVENT_ID"))
-
-    candidates_df = tagged_df.filter(col("event_id").isNotNull() & col("timestamp").isNotNull() & (col("row_num") == 1))
+    candidates_df = batch_df.filter(col("event_id").isNotNull() & col("timestamp").isNotNull())
     candidates_df.cache()
 
     parsed_df = candidates_df \
@@ -34,7 +27,7 @@ def process_silver_batch(batch_df, batch_id):
     )
     smoke_invalid = smoke_df.subtract(smoke_valid).withColumn("failed_rules", lit("INVALID_SMOKE_PHYSICS"))
     if not smoke_valid.isEmpty():
-        smoke_valid.drop("telemetry_payload", "row_num").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_optical_smoke")
+        smoke_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_optical_smoke")
 
     # 3. RoR Heat
     heat_df = parsed_df.filter(col("device_type") == "ror_heat") \
@@ -46,7 +39,7 @@ def process_silver_batch(batch_df, batch_id):
     )
     heat_invalid = heat_df.subtract(heat_valid).withColumn("failed_rules", lit("INVALID_HEAT_PHYSICS"))
     if not heat_valid.isEmpty():
-        heat_valid.drop("telemetry_payload", "row_num").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_ror_heat")
+        heat_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_ror_heat")
 
     # 4. Multi-Sensor
     multi_df = parsed_df.filter(col("device_type") == "multi_sensor") \
@@ -62,7 +55,7 @@ def process_silver_batch(batch_df, batch_id):
     )
     multi_invalid = multi_df.subtract(multi_valid).withColumn("failed_rules", lit("INVALID_MULTI_PHYSICS"))
     if not multi_valid.isEmpty():
-        multi_valid.drop("telemetry_payload", "row_num").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_multi_sensor")
+        multi_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_multi_sensor")
 
     # 5. Horn Strobe
     horn_df = parsed_df.filter(col("device_type") == "horn_strobe") \
@@ -76,7 +69,7 @@ def process_silver_batch(batch_df, batch_id):
     )
     horn_invalid = horn_df.subtract(horn_valid).withColumn("failed_rules", lit("INVALID_HORN_PHYSICS"))
     if not horn_valid.isEmpty():
-        horn_valid.drop("telemetry_payload", "row_num").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_horn_strobe")
+        horn_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_horn_strobe")
 
     # 6. Manual Call Point
     mcp_df = parsed_df.filter(col("device_type") == "manual_call_point") \
@@ -85,7 +78,7 @@ def process_silver_batch(batch_df, batch_id):
     mcp_valid = mcp_df
     mcp_invalid = mcp_df.filter(lit(False)).withColumn("failed_rules", lit(""))
     if not mcp_valid.isEmpty():
-        mcp_valid.drop("telemetry_payload", "row_num").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_manual_call_point")
+        mcp_valid.drop("telemetry_payload").write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_manual_call_point")
 
     # 7. Base Columns for Unified Table
     base_cols = [
@@ -104,7 +97,7 @@ def process_silver_batch(batch_df, batch_id):
         all_valid_base.write.format("delta").mode("append").option("mergeSchema", "true").save("/tmp/silver_unified")
 
     # 8. Route Quarantine Records
-    all_invalid = null_keys_df.unionByName(duplicates_df, allowMissingColumns=True) \
+    all_invalid = null_keys_df \
         .unionByName(smoke_invalid, allowMissingColumns=True) \
         .unionByName(heat_invalid, allowMissingColumns=True) \
         .unionByName(multi_invalid, allowMissingColumns=True) \
@@ -123,7 +116,12 @@ def run_silver(spark):
     print("[Silver] Starting Bronze -> Silver Validation Stream...", flush=True)
     bronze_df = spark.readStream.format("delta").load("/tmp/bronze_table")
 
-    query = bronze_df.writeStream \
+    # Industry standard streaming deduplication utilizing Watermarks
+    dedup_df = bronze_df \
+        .withWatermark("timestamp", "15 minutes") \
+        .dropDuplicates(["event_id"])
+
+    query = dedup_df.writeStream \
         .foreachBatch(process_silver_batch) \
         .option("checkpointLocation", "/tmp/checkpoints/silver") \
         .trigger(processingTime="15 seconds") \

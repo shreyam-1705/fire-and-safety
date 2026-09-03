@@ -174,7 +174,9 @@ def preinitialize_tables(spark_session):
             device_id STRING,
             zone_id STRING,
             avg_smoke_obscuration DOUBLE,
-            max_chamber_dirt DOUBLE
+            max_chamber_dirt DOUBLE,
+            is_smoke_alarm BOOLEAN,
+            is_dirt_warning BOOLEAN
         ) USING DELTA
     """)
 
@@ -185,7 +187,9 @@ def preinitialize_tables(spark_session):
             device_id STRING,
             zone_id STRING,
             avg_temperature DOUBLE,
-            max_rate_of_rise DOUBLE
+            max_rate_of_rise DOUBLE,
+            is_ror_alarm BOOLEAN,
+            is_fixed_temp_alarm BOOLEAN
         ) USING DELTA
     """)
 
@@ -197,7 +201,9 @@ def preinitialize_tables(spark_session):
             zone_id STRING,
             avg_smoke_obscuration DOUBLE,
             avg_temperature DOUBLE,
-            max_co_ppm INT
+            max_co_ppm INT,
+            is_toxic_co_alarm BOOLEAN,
+            is_cell_fault BOOLEAN
         ) USING DELTA
     """)
 
