@@ -13,16 +13,11 @@ TABLES_TO_MAINTAIN = [
 ]
 
 def run_daily_rollups_5m(spark):
-    """
-    Computes 5-minute rolling slices for each date (midnight to window_end).
-    Upserts into gold_*_daily_5m tables.
-    """
     try:
         df = spark.read.format("delta").load("/tmp/silver_unified")
         if df.isEmpty():
             return
 
-        # Generate 5-minute snapshots across event timestamps
         windowed_df = df.withColumn("date", to_date(col("timestamp")).cast("string")) \
                         .withColumn("window_end", window(col("timestamp"), "5 minutes").end)
 
@@ -33,7 +28,6 @@ def run_daily_rollups_5m(spark):
             .agg(
                 lit("FL-01").alias("floor_level"),
                 countDistinct("device_id").alias("device_density"),
-                # Count distinct devices in alarm/trouble to prevent heartbeat double-counting
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("active_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("active_faults"),
                 countDistinct(when(col("current_state") == "ISOLATED", col("device_id"))).alias("active_disablements"),
@@ -59,35 +53,27 @@ def run_daily_rollups_5m(spark):
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("active_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("active_faults"),
                 countDistinct("device_id").alias("monitored_devices"),
-                
-                # Dynamic Fleet Health Score: (Total Devices - Faulty Devices) / Total Devices * 100
                 round(((countDistinct("device_id") - countDistinct(when(col("current_state") == "TROUBLE", col("device_id")))) / countDistinct("device_id")) * 100, 2).alias("fleet_health_score"),
-                
                 countDistinct(when(col("current_state") == "ISOLATED", col("device_id"))).alias("active_disablements"),
                 countDistinct(when(col("device_type") == "optical_smoke", col("device_id"))).alias("smoke_detector_count"),
                 countDistinct(when(col("device_type") == "horn_strobe", col("device_id"))).alias("horn_strobe_count"),
                 countDistinct(when(col("device_type") == "manual_call_point", col("device_id"))).alias("mcp_count"),
                 countDistinct(when(col("device_type") == "multi_sensor", col("device_id"))).alias("multi_sensor_count"),
                 countDistinct(when(col("device_type") == "ror_heat", col("device_id"))).alias("ror_heat_count"),
-                
-                # Daily cumulative historical count of unique alarms/faults
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("daily_total_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("daily_total_faults"),
                 
-                # Self Tests dynamically counted by successful self_verify heartbeats
-                spark_sum(when(col("self_verify_passed") == True, 1).otherwise(0)).alias("daily_self_tests"),
+                # Use cast("long") for integer operations merging into LONG delta columns
+                spark_sum(when(col("self_verify_passed") == True, 1).otherwise(0)).cast("long").alias("daily_self_tests"),
                 lit(99.9).alias("system_online_pct"),
-                lit(10).alias("total_online_controllers"),
-                lit(0).alias("total_degraded_controllers"),
-                lit(0).alias("total_offline_controllers"),
+                lit(10).cast("long").alias("total_online_controllers"),
+                lit(0).cast("long").alias("total_degraded_controllers"),
+                lit(0).cast("long").alias("total_offline_controllers"),
                 
-                # Dynamic pass rates based on verification payloads
                 round((spark_sum(when((col("device_type") == "optical_smoke") & (col("self_verify_passed") == True), 1).otherwise(0)) / 
                        spark_sum(when(col("device_type") == "optical_smoke", 1).otherwise(0.0001))) * 100, 2).alias("nfpa72_drift_pass_rate"),
-                
                 round((spark_sum(when((col("device_type") == "horn_strobe") & (col("self_verify_passed") == True), 1).otherwise(0)) / 
                        spark_sum(when(col("device_type") == "horn_strobe", 1).otherwise(0.0001))) * 100, 2).alias("nac_audibility_pass_rate"),
-                
                 lit(100.0).alias("strobe_sync_pass_rate"),
                 round(spark_avg("battery_runtime_hours"), 2).alias("battery_runtime_hours")
             )
@@ -107,12 +93,10 @@ def run_daily_rollups_5m(spark):
                 countDistinct("device_id").alias("total_monitored_devices"),
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("global_active_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("global_active_faults"),
-                
-                # Dynamic Global Fleet Health
                 round(((countDistinct("device_id") - countDistinct(when(col("current_state") == "TROUBLE", col("device_id")))) / countDistinct("device_id")) * 100, 2).alias("global_fleet_health_score"),
                 
-                lit(25).alias("global_online_controllers"),
-                lit(0).alias("global_offline_controllers")
+                lit(25).cast("long").alias("global_online_controllers"),
+                lit(0).cast("long").alias("global_offline_controllers")
             )
 
         target_org = DeltaTable.forPath(spark, "/tmp/gold_organization_daily_5m")
@@ -136,7 +120,7 @@ def optimize_and_vacuum(spark):
 
 def _maintenance_loop(spark):
     while True:
-        time.sleep(300)  # Runs every 5 minutes
+        time.sleep(300)
         print("\n[Maintenance] Running scheduled rollups and compaction...", flush=True)
         run_daily_rollups_5m(spark)
         optimize_and_vacuum(spark)

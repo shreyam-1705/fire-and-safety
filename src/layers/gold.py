@@ -11,10 +11,9 @@ def run_gold_zone_kpi(spark):
             col("site_id"),
             col("zone_id")
         ).agg(
-            # Using max() to flag if ANY heartbeat in this 5m window was an alarm/trouble
-            spark_max(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("active_alarms"),
-            spark_max(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("active_troubles"),
-            spark_max(when(col("current_state") == "ISOLATED", 1).otherwise(0)).alias("isolated_devices")
+            spark_max(when(col("current_state") == "ALARM", 1).otherwise(0)).cast("long").alias("active_alarms"),
+            spark_max(when(col("current_state") == "TROUBLE", 1).otherwise(0)).cast("long").alias("active_troubles"),
+            spark_max(when(col("current_state") == "ISOLATED", 1).otherwise(0)).cast("long").alias("isolated_devices")
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
