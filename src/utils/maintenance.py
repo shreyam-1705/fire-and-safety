@@ -11,12 +11,13 @@ def run_daily_rollups_5m(spark):
             return
 
         windowed_df = df.withColumn("date", to_date(col("timestamp")).cast("string")) \
-                        .withColumn("window_end", window(col("timestamp"), "5 minutes").end)
+                        .withColumn("window_end", window(col("timestamp"), "5 minutes").end) \
+                        .withColumnRenamed("zone_id", "system_id")
 
         # -------------------------------------------------------------
-        # 1. Gold Zone Daily 5m Rolling
+        # 1. Gold Zone Daily 5m Rolling (Now grouped by system_id)
         # -------------------------------------------------------------
-        zone_daily = windowed_df.groupBy("date", "window_end", "organization_id", "site_id", "zone_id") \
+        zone_daily = windowed_df.groupBy("date", "window_end", "organization_id", "site_id", "system_id") \
             .agg(
                 lit("FL-01").alias("floor_level"),
                 countDistinct("device_id").alias("device_density"),
@@ -34,11 +35,11 @@ def run_daily_rollups_5m(spark):
         target_zone = DeltaTable.forPath(spark, "/tmp/gold_zone_daily_5m")
         target_zone.alias("t").merge(
             zone_daily.alias("s"),
-            "t.date = s.date AND t.window_end = s.window_end AND t.organization_id = s.organization_id AND t.site_id = s.site_id AND t.zone_id = s.zone_id"
+            "t.date = s.date AND t.window_end = s.window_end AND t.organization_id = s.organization_id AND t.site_id = s.site_id AND t.system_id = s.system_id"
         ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
 
         # -------------------------------------------------------------
-        # 2. Gold Site Daily 5m Rolling
+        # 2. Gold Site Daily 5m Rolling (Dynamic Controller Aggregation)
         # -------------------------------------------------------------
         site_daily = windowed_df.groupBy("date", "window_end", "organization_id", "site_id") \
             .agg(
@@ -55,9 +56,9 @@ def run_daily_rollups_5m(spark):
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("daily_total_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("daily_total_faults"),
                 spark_sum(when(col("self_verify_passed") == True, 1).otherwise(0)).cast("long").alias("daily_self_tests"),
-                lit(99.9).alias("system_online_pct"),
-                lit(10).cast("long").alias("total_online_controllers"),
-                lit(0).cast("long").alias("total_degraded_controllers"),
+                lit(100.0).alias("system_online_pct"),
+                countDistinct("panel_id").alias("total_online_controllers"),
+                countDistinct(when(col("current_state") == "TROUBLE", col("panel_id"))).alias("total_degraded_controllers"),
                 lit(0).cast("long").alias("total_offline_controllers"),
                 round((spark_sum(when((col("device_type") == "optical_smoke") & (col("self_verify_passed") == True), 1).otherwise(0)) / 
                        spark_sum(when(col("device_type") == "optical_smoke", 1).otherwise(0.0001))) * 100, 2).alias("nfpa72_drift_pass_rate"),
@@ -83,7 +84,7 @@ def run_daily_rollups_5m(spark):
                 countDistinct(when(col("current_state") == "ALARM", col("device_id"))).alias("global_active_alarms"),
                 countDistinct(when(col("current_state") == "TROUBLE", col("device_id"))).alias("global_active_faults"),
                 round(((countDistinct("device_id") - countDistinct(when(col("current_state") == "TROUBLE", col("device_id")))) / countDistinct("device_id")) * 100, 2).alias("global_fleet_health_score"),
-                lit(25).cast("long").alias("global_online_controllers"),
+                countDistinct("panel_id").alias("global_online_controllers"),
                 lit(0).cast("long").alias("global_offline_controllers")
             )
 

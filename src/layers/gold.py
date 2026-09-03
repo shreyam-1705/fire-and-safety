@@ -17,7 +17,8 @@ def run_gold_zone_kpi(spark):
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
-            "organization_id", "site_id", "zone_id",
+            "organization_id", "site_id", 
+            col("zone_id").alias("system_id"),
             "active_alarms", "active_troubles", "isolated_devices"
         )
 
@@ -31,7 +32,10 @@ def run_gold_smoke(spark):
     df = spark.readStream.format("delta").load("/tmp/silver_optical_smoke")
     
     smoke_5m = df.withWatermark("timestamp", "2 minutes") \
-        .groupBy(window(col("timestamp"), "5 minutes"), col("device_id"), col("zone_id")) \
+        .groupBy(
+            window(col("timestamp"), "5 minutes"), 
+            col("organization_id"), col("site_id"), col("zone_id"), col("device_id")
+        ) \
         .agg(
             avg("smoke_obscuration_pct").alias("avg_smoke_obscuration"),
             spark_max("chamber_dirt_pct").alias("max_chamber_dirt"),
@@ -40,7 +44,9 @@ def run_gold_smoke(spark):
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
-            "device_id", "zone_id",
+            "organization_id", "site_id",
+            col("zone_id").alias("system_id"),
+            "device_id",
             "avg_smoke_obscuration", "max_chamber_dirt",
             "is_smoke_alarm", "is_dirt_warning"
         )
@@ -55,7 +61,10 @@ def run_gold_heat(spark):
     df = spark.readStream.format("delta").load("/tmp/silver_ror_heat")
     
     heat_5m = df.withWatermark("timestamp", "2 minutes") \
-        .groupBy(window(col("timestamp"), "5 minutes"), col("device_id"), col("zone_id")) \
+        .groupBy(
+            window(col("timestamp"), "5 minutes"), 
+            col("organization_id"), col("site_id"), col("zone_id"), col("device_id")
+        ) \
         .agg(
             avg("temperature_celsius").alias("avg_temperature"),
             spark_max("rate_of_rise_c_per_min").alias("max_rate_of_rise"),
@@ -64,7 +73,9 @@ def run_gold_heat(spark):
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
-            "device_id", "zone_id",
+            "organization_id", "site_id",
+            col("zone_id").alias("system_id"),
+            "device_id",
             "avg_temperature", "max_rate_of_rise",
             "is_ror_alarm", "is_fixed_temp_alarm"
         )
@@ -79,7 +90,10 @@ def run_gold_multi(spark):
     df = spark.readStream.format("delta").load("/tmp/silver_multi_sensor")
     
     multi_5m = df.withWatermark("timestamp", "2 minutes") \
-        .groupBy(window(col("timestamp"), "5 minutes"), col("device_id"), col("zone_id")) \
+        .groupBy(
+            window(col("timestamp"), "5 minutes"), 
+            col("organization_id"), col("site_id"), col("zone_id"), col("device_id")
+        ) \
         .agg(
             avg("smoke_obscuration_pct").alias("avg_smoke_obscuration"),
             avg("temperature_celsius").alias("avg_temperature"),
@@ -89,7 +103,9 @@ def run_gold_multi(spark):
         ).select(
             col("window.start").alias("window_start"),
             col("window.end").alias("window_end"),
-            "device_id", "zone_id",
+            "organization_id", "site_id",
+            col("zone_id").alias("system_id"),
+            "device_id",
             "avg_smoke_obscuration", "avg_temperature", "max_co_ppm",
             "is_toxic_co_alarm", "is_cell_fault"
         )
