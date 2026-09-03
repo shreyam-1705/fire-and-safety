@@ -20,8 +20,7 @@ def handle_shutdown(signum=None, frame=None):
     print(f"\n[shutdown] Signal {signum} received. Stopping Spark & syncing...", flush=True)
     try:
         if spark is not None:
-            active_queries = list(spark.streams.active)
-            for query in active_queries:
+            for query in list(spark.streams.active):
                 query.stop()
             spark.stop()
     except Exception as exc:
@@ -66,7 +65,7 @@ def preinitialize_tables(spark_session):
         ) USING DELTA
     """)
 
-    # 2. Silver Device & Common Tables
+    # 2. Silver Device & Unified Tables
     silver_base = """
         event_id STRING,
         timestamp TIMESTAMP,
@@ -88,55 +87,10 @@ def preinitialize_tables(spark_session):
         day INT
     """
 
-    spark_session.sql(f"""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_optical_smoke` (
-            {silver_base},
-            smoke_obscuration_pct DOUBLE,
-            chamber_dirt_pct DOUBLE
-        ) USING DELTA
-    """)
+    for table_name in ["silver_optical_smoke", "silver_ror_heat", "silver_multi_sensor", "silver_horn_strobe", "silver_manual_call_point"]:
+        spark_session.sql(f"CREATE TABLE IF NOT EXISTS delta.`/tmp/{table_name}` ({silver_base}) USING DELTA")
 
-    spark_session.sql(f"""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_ror_heat` (
-            {silver_base},
-            temperature_celsius DOUBLE,
-            rate_of_rise_c_per_min DOUBLE
-        ) USING DELTA
-    """)
-
-    spark_session.sql(f"""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_multi_sensor` (
-            {silver_base},
-            smoke_obscuration_pct DOUBLE,
-            temperature_celsius DOUBLE,
-            co_ppm INT,
-            co_cell_health_pct DOUBLE
-        ) USING DELTA
-    """)
-
-    spark_session.sql(f"""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_horn_strobe` (
-            {silver_base},
-            is_sounding BOOLEAN,
-            strobe_active BOOLEAN,
-            self_test_decibel_level DOUBLE,
-            sync_offset_ms DOUBLE
-        ) USING DELTA
-    """)
-
-    spark_session.sql(f"""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_manual_call_point` (
-            {silver_base},
-            is_activated BOOLEAN,
-            tamper_switch BOOLEAN
-        ) USING DELTA
-    """)
-
-    spark_session.sql(f"""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_unified` (
-            {silver_base}
-        ) USING DELTA
-    """)
+    spark_session.sql(f"CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_unified` ({silver_base}) USING DELTA")
 
     spark_session.sql("""
         CREATE TABLE IF NOT EXISTS delta.`/tmp/silver_quarantine` (
@@ -154,7 +108,7 @@ def preinitialize_tables(spark_session):
         ) USING DELTA
     """)
 
-    # 3. Gold Fact & KPI Rollups
+    # 3. Gold 5-Minute Device Telemetry Fact Tables
     spark_session.sql("""
         CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_zone_kpi_5m` (
             window_start TIMESTAMP,
@@ -202,9 +156,11 @@ def preinitialize_tables(spark_session):
         ) USING DELTA
     """)
 
+    # 4. Gold 5-Minute Expanding Daily Rolling Tables (Midnight -> window_end)
     spark_session.sql("""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_zone_daily` (
+        CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_zone_daily_5m` (
             date STRING,
+            window_end TIMESTAMP,
             organization_id STRING,
             site_id STRING,
             zone_id STRING,
@@ -223,8 +179,9 @@ def preinitialize_tables(spark_session):
     """)
 
     spark_session.sql("""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_site_daily` (
+        CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_site_daily_5m` (
             date STRING,
+            window_end TIMESTAMP,
             organization_id STRING,
             site_id STRING,
             active_alarms LONG,
@@ -252,8 +209,9 @@ def preinitialize_tables(spark_session):
     """)
 
     spark_session.sql("""
-        CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_organization_daily` (
+        CREATE TABLE IF NOT EXISTS delta.`/tmp/gold_organization_daily_5m` (
             date STRING,
+            window_end TIMESTAMP,
             organization_id STRING,
             total_sites_monitored LONG,
             total_monitored_devices LONG,
@@ -285,7 +243,6 @@ if __name__ == "__main__":
 
     spark.sparkContext.setLogLevel("WARN")
 
-    # Register local Kafka SSL keystores into Spark cluster context
     if os.path.exists("truststore.jks") and os.path.exists("keystore.p12"):
         spark.sparkContext.addFile("truststore.jks")
         spark.sparkContext.addFile("keystore.p12")

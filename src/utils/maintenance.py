@@ -1,7 +1,7 @@
 # FILE: src/utils/maintenance.py
 import time
 import threading
-from pyspark.sql.functions import col, to_date, count, sum as spark_sum, avg as spark_avg, when, lit
+from pyspark.sql.functions import col, to_date, count, sum as spark_sum, avg as spark_avg, when, lit, window
 from delta.tables import DeltaTable
 
 TABLES_TO_MAINTAIN = [
@@ -9,25 +9,27 @@ TABLES_TO_MAINTAIN = [
     "silver_optical_smoke", "silver_ror_heat", "silver_multi_sensor",
     "silver_horn_strobe", "silver_manual_call_point", "silver_unified", "silver_quarantine",
     "gold_zone_kpi_5m", "gold_optical_smoke_5m", "gold_ror_heat_5m", "gold_multi_sensor_5m",
-    "gold_zone_daily", "gold_site_daily", "gold_organization_daily"
+    "gold_zone_daily_5m", "gold_site_daily_5m", "gold_organization_daily_5m"
 ]
 
-def run_daily_rollups(spark):
+def run_daily_rollups_5m(spark):
     """
-    Computes Zone, Site, and Organization daily summaries from silver_unified.
-    Upserts a single aggregated row per entity per calendar date.
+    Computes 5-minute rolling slices for each date (midnight to window_end).
+    Upserts into gold_*_daily_5m tables.
     """
     try:
         df = spark.read.format("delta").load("/tmp/silver_unified")
         if df.isEmpty():
             return
 
-        dated_df = df.withColumn("date", to_date(col("timestamp")).cast("string"))
+        # Generate 5-minute snapshots across event timestamps
+        windowed_df = df.withColumn("date", to_date(col("timestamp")).cast("string")) \
+                        .withColumn("window_end", window(col("timestamp"), "5 minutes").end)
 
         # -------------------------------------------------------------
-        # 1. Gold Zone Daily (Target grain: 1 row per date + zone_id)
+        # 1. Gold Zone Daily 5m Rolling
         # -------------------------------------------------------------
-        zone_daily = dated_df.groupBy("date", "organization_id", "site_id", "zone_id") \
+        zone_daily = windowed_df.groupBy("date", "window_end", "organization_id", "site_id", "zone_id") \
             .agg(
                 lit("FL-01").alias("floor_level"),
                 count("device_id").alias("device_density"),
@@ -42,16 +44,16 @@ def run_daily_rollups(spark):
                 spark_sum(when(col("device_type") == "ror_heat", 1).otherwise(0)).alias("ror_heat_count")
             )
 
-        target_zone = DeltaTable.forPath(spark, "/tmp/gold_zone_daily")
+        target_zone = DeltaTable.forPath(spark, "/tmp/gold_zone_daily_5m")
         target_zone.alias("t").merge(
             zone_daily.alias("s"),
-            "t.date = s.date AND t.organization_id = s.organization_id AND t.site_id = s.site_id AND t.zone_id = s.zone_id"
+            "t.date = s.date AND t.window_end = s.window_end AND t.organization_id = s.organization_id AND t.site_id = s.site_id AND t.zone_id = s.zone_id"
         ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
 
         # -------------------------------------------------------------
-        # 2. Gold Site Daily (Target grain: 1 row per date + site_id)
+        # 2. Gold Site Daily 5m Rolling
         # -------------------------------------------------------------
-        site_daily = dated_df.groupBy("date", "organization_id", "site_id") \
+        site_daily = windowed_df.groupBy("date", "window_end", "organization_id", "site_id") \
             .agg(
                 spark_sum(when(col("current_state") == "ALARM", 1).otherwise(0)).alias("active_alarms"),
                 spark_sum(when(col("current_state") == "TROUBLE", 1).otherwise(0)).alias("active_faults"),
@@ -76,16 +78,16 @@ def run_daily_rollups(spark):
                 spark_avg("battery_runtime_hours").alias("battery_runtime_hours")
             )
 
-        target_site = DeltaTable.forPath(spark, "/tmp/gold_site_daily")
+        target_site = DeltaTable.forPath(spark, "/tmp/gold_site_daily_5m")
         target_site.alias("t").merge(
             site_daily.alias("s"),
-            "t.date = s.date AND t.organization_id = s.organization_id AND t.site_id = s.site_id"
+            "t.date = s.date AND t.window_end = s.window_end AND t.organization_id = s.organization_id AND t.site_id = s.site_id"
         ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
 
         # -------------------------------------------------------------
-        # 3. Gold Organization Daily (Target grain: 1 row per date + org_id)
+        # 3. Gold Organization Daily 5m Rolling
         # -------------------------------------------------------------
-        org_daily = dated_df.groupBy("date", "organization_id") \
+        org_daily = windowed_df.groupBy("date", "window_end", "organization_id") \
             .agg(
                 count("site_id").alias("total_sites_monitored"),
                 count("device_id").alias("total_monitored_devices"),
@@ -96,15 +98,15 @@ def run_daily_rollups(spark):
                 lit(0).alias("global_offline_controllers")
             )
 
-        target_org = DeltaTable.forPath(spark, "/tmp/gold_organization_daily")
+        target_org = DeltaTable.forPath(spark, "/tmp/gold_organization_daily_5m")
         target_org.alias("t").merge(
             org_daily.alias("s"),
-            "t.date = s.date AND t.organization_id = s.organization_id"
+            "t.date = s.date AND t.window_end = s.window_end AND t.organization_id = s.organization_id"
         ).whenMatchedUpdateAll().whenNotMatchedInsertAll().execute()
 
-        print("[Maintenance] Daily rollups merged successfully.", flush=True)
+        print("[Maintenance] 5-minute rolling daily rollups merged successfully.", flush=True)
     except Exception as e:
-        print(f"[Maintenance] Daily rollup failed: {e}", flush=True)
+        print(f"[Maintenance] 5-minute rolling daily rollup failed: {e}", flush=True)
 
 def optimize_and_vacuum(spark):
     for table in TABLES_TO_MAINTAIN:
@@ -119,7 +121,7 @@ def _maintenance_loop(spark):
     while True:
         time.sleep(300)  # Runs every 5 minutes
         print("\n[Maintenance] Running scheduled rollups and compaction...", flush=True)
-        run_daily_rollups(spark)
+        run_daily_rollups_5m(spark)
         optimize_and_vacuum(spark)
 
 def start_maintenance_thread(spark):

@@ -1,3 +1,4 @@
+# FILE: src/utils/hf_sync.py
 import os
 import time
 import threading
@@ -25,14 +26,16 @@ SYNC_TARGETS = {
     "silver_unified": "/tmp/silver_unified",
     "silver_quarantine": "/tmp/silver_quarantine",
 
-    # Gold
+    # Gold 5m Facts
     "gold_zone_kpi_5m": "/tmp/gold_zone_kpi_5m",
     "gold_optical_smoke_5m": "/tmp/gold_optical_smoke_5m",
     "gold_ror_heat_5m": "/tmp/gold_ror_heat_5m",
     "gold_multi_sensor_5m": "/tmp/gold_multi_sensor_5m",
-    "gold_zone_daily": "/tmp/gold_zone_daily",
-    "gold_site_daily": "/tmp/gold_site_daily",
-    "gold_organization_daily": "/tmp/gold_organization_daily",
+
+    # Gold 5m Rolling Daily KPIs
+    "gold_zone_daily_5m": "/tmp/gold_zone_daily_5m",
+    "gold_site_daily_5m": "/tmp/gold_site_daily_5m",
+    "gold_organization_daily_5m": "/tmp/gold_organization_daily_5m",
 
     # Checkpoints
     "checkpoints": "/tmp/checkpoints"
@@ -79,7 +82,6 @@ def sync_all_to_hf(tag="periodic"):
         return
 
     with _sync_lock:
-        # 1. Upload compressed tarball to Bucket
         if pack_state():
             try:
                 batch_bucket_files(
@@ -91,7 +93,6 @@ def sync_all_to_hf(tag="periodic"):
             except Exception as e:
                 print(f"[sync:{tag}] Failed to upload tarball: {e}", flush=True)
 
-        # 2. Sync individual table directories to Bucket
         for name, local_path in SYNC_TARGETS.items():
             remote_path = f"hf://buckets/{BUCKET_ID}/{name}"
             if os.path.exists(local_path):
@@ -110,7 +111,6 @@ def _sync_loop():
         sync_all_to_hf(tag="periodic")
 
 def restore_from_hf():
-    """Restores pipeline state on cold start."""
     if not BUCKET_ID or not TOKEN:
         print("[restore] HF_NAMESPACE, HF_BUCKET_NAME, or HF_TOKEN missing. Skipping restore.", flush=True)
         return
