@@ -1,11 +1,12 @@
+# FILE: src/layers/bronze.py
 import os
 from pyspark import SparkFiles
 from pyspark.sql.functions import from_json, col, current_timestamp, to_timestamp, year, month, dayofmonth
-from pyspark.sql.types import StructType, StructField, StringType
+from pyspark.sql.types import StructType, StructField, StringType, BooleanType, DoubleType
 
 def run_bronze(spark):
     print("[Bronze] Starting Kafka -> Bronze Stream...", flush=True)
-    
+
     envelope_schema = StructType([
         StructField("event_id", StringType()),
         StructField("timestamp", StringType()),
@@ -16,9 +17,9 @@ def run_bronze(spark):
         StructField("device_id", StringType()),
         StructField("device_type", StringType()),
         StructField("current_state", StringType()),
-        StructField("is_test_mode", StringType()), 
+        StructField("is_test_mode", BooleanType()),
         StructField("fault_code", StringType()),
-        StructField("battery_runtime_hours", StringType()), 
+        StructField("battery_runtime_hours", DoubleType()),
         StructField("telemetry", StringType())
     ])
 
@@ -26,8 +27,7 @@ def run_bronze(spark):
         .option("kafka.bootstrap.servers", os.getenv("KAFKA_URI")) \
         .option("subscribe", "fire-and-safety") \
         .option("startingOffsets", "earliest") \
-        .option("maxOffsetsPerTrigger", 5000) \
-        .option("minPartitions", "4") \
+        .option("maxOffsetsPerTrigger", 10000) \
         .option("failOnDataLoss", "false") \
         .option("kafka.security.protocol", "SSL") \
         .option("kafka.ssl.truststore.location", SparkFiles.get("truststore.jks")) \
@@ -39,7 +39,6 @@ def run_bronze(spark):
     parsed_df = kafka_df.selectExpr("CAST(value AS STRING) as json_str") \
         .select(from_json(col("json_str"), envelope_schema).alias("envelope")).select("envelope.*")
 
-    # CRITICAL: Cast timestamp string to actual TIMESTAMP type for watermarking
     final_bronze_df = parsed_df \
         .withColumnRenamed("telemetry", "telemetry_payload") \
         .withColumn("ingestion_timestamp", current_timestamp()) \
@@ -51,7 +50,7 @@ def run_bronze(spark):
     query = final_bronze_df.writeStream.format("delta").outputMode("append") \
         .option("checkpointLocation", "/tmp/checkpoints/bronze") \
         .option("mergeSchema", "true") \
-        .trigger(processingTime="30 seconds") \
+        .trigger(processingTime="15 seconds") \
         .start("/tmp/bronze_table")
-        
+
     query.awaitTermination()
